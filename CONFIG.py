@@ -1,26 +1,28 @@
 #input xpath
-grpname = '//*[@id="dnf_class_values_student_group__name__widget"]'
-grpdesc = '//*[@id="dnf_class_values_student_group__purpose__widget"]'
+grpname = '//h2[@class="h2__avatarandbutton text__shadow"]'
+grpdesc = '//div[@class="row container-orgabout"]/div[@class="col-xs-12 col-sm-7"]/p'
 grpaddress = ''
-grpemail = '//div[@id="dnf_class_values_student_group__email__widget"]/a'
+grpemail = ''
 tags = ''
-contactName = '//div[@id="dnf_class_values_student_group__advisers__0__fullname__widget"]'
+contactName = '//ul[@class="list-unstyled list-inline pull-left"]/li[2]/text()'
 grpurl = ''
 
 #all the picurl should be included in the src tag
-picurl = '//div[@class="detailed_logo"]/img'
+picurl = '//img[@class="img-circle img__orgavatar"]'
 #input the list of community
-community = ["american", "agnes"]
+community = ["cua", "agnes"]
 
 #input url #format: "http(s)://xx.xxx.edu(com/net)/xxx/xxx/xxx" The domain name should be the same
 mainUrlList = [
-				'https://american-community.symplicity.com/index.php?mode=list',
+				'https://getconnected.gmu.edu/organizations\?SearchType=None&amp;SelectedCategoryId=0&amp;CurrentPage=1',
 				]
 				
 #input a list of regular expression #format: "http(s)://xx.xxx.edu(com/net)/xxx""
+#/organization/ActiveMinds_CUA
+#/organizations?SearchType=None&amp;SelectedCategoryId=0&amp;CurrentPage=2
 urlREList = [
-				'\?mode=form&amp;id=\w*&amp;tab=profile',
-				'\?_so_list_from\w*=\d*?&amp;_so_list_from\w*_page=\d*',
+				'/organization/\w+',
+				'/organizations\?SearchType=None&amp;SelectedCategoryId=0&amp;CurrentPage=\d+'
 			]
 #remove url partial pattern
 subUrlList = []
@@ -53,13 +55,10 @@ filterElementList = ['.jpg', '.css', '.png', '.js', '.ico', '.pdf', '.docx', '.j
 
 #custom header
 customHeaders = {
-					'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-					'Accept-Encoding':'gzip, deflate, sdch, br',
-					'Accept-Language':'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2',
-					'Connection':'keep-alive',
-					'Cookie':'PHPSESSID=8791b51facbc1615e06daf02b35673e0; sympcsm_cookies_checked=1; BALANCEID=balancer.172.16.120.64',
-					'Host':'american-community.symplicity.com',
-					'Referer':'https://american-community.symplicity.com/?mode=list',
-					'Upgrade-Insecure-Requests':1,
-					'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36',
-				}
+			'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+			'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+			'Accept-Encoding': 'none',
+			'Accept-Language': 'en-US,en;q=0.8',
+			'Connection': 'keep-alive',
+			'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36',
+			}

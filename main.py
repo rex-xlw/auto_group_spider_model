@@ -26,8 +26,10 @@ sys.setdefaultencoding('utf-8')
 conn = connection.conn
 Agnes = conn.Agnes
 itemFilter = conn.itemFilter
-groups = Agnes.groups_auto
-urlFilter = itemFilter.urlFilter_group_auto
+# groups = Agnes.groups_auto
+# urlFilter = itemFilter.urlFilter_group_auto
+groups = Agnes.groups
+urlFilter = itemFilter.urlFilter_groups
 ######################
 
 visitList = []
@@ -139,28 +141,32 @@ def visit_page():
 
 	while len(visitList) != 0:
 		requrl = visitList[0]
+		try:
+			#check custom header
+			if customHeaders == "":
+				req = urllib2.Request(requrl)
+			else:
+				req = urllib2.Request(requrl, headers = customHeaders)
 
-		
-		#check custom header
-		if customHeaders == "":
-			req = urllib2.Request(requrl)
-		else:
-			req = urllib2.Request(requrl, headers = customHeaders)
+			res_data = urllib2.urlopen(req, timeout = 10)
+			encoding = res_data.info().get('Content-Encoding')
+			
+			if encoding in ('gzip','x-zip','deflate'):
+				res = decode(res_data, encoding)
+			else:
+				res = res_data.read()
 
-		res_data = urllib2.urlopen(req, timeout = 10)
-		encoding = res_data.info().get('Content-Encoding')
-		
-		if encoding in ('gzip','x-zip','deflate'):
-			res = decode(res_data, encoding)
-		else:
-			res = res_data.read()
+			analyze_page(res, requrl)
 
-		analyze_page(res, requrl)
-		"""
-		if "/frontpage?field_event_sub_type_tid[7]=7&field_event_sub_type_tid[8]=8&field_event_sub_type_tid[9]=9&field_event_sub_type_tid[11]=11&field_event_sub_type_tid[12]=12&field_event_sub_type_tid[13]=13&field_event_sub_type_tid[14]=14&field_event_sub_type_tid[15]=15&page=1" in requrl:
-			print visitList
-			raw_input("23")
-		"""
+			print requrl
+
+		except Exception as e:
+			print "#######################################"
+			print "Exception handling: " + str(e)
+			print requrl
+			printException()
+			print "#######################################"
+			
 		visitList.remove(requrl)
 		visitedList.append(requrl)
 		#print visitedList
@@ -168,7 +174,7 @@ def visit_page():
 		
 		#sys.stdout.write('visited quantity: '+ str(len(visitedList))+ "\r")
 		#sys.stdout.flush()
-		print requrl
+
 		#print visitedList
 		#print visitList
 		#raw_input("123")
@@ -256,7 +262,7 @@ def fetch_url(HTML):
 							#visitList.append(url)
 							pendingUrlList.append(url)
 
-	print pendingUrlList
+	# print pendingUrlList
 	for url in pendingUrlList:
 		if not check_url(url) and url not in visitList and url not in visitedList:
 			visitList.append(url)
@@ -326,8 +332,11 @@ def fetch_information(HTML, requrl):
 	grpdesc = tree.xpath(grpdescPattern)
 	grpdesc = get_text(grpdesc)
 
-	grpemail = tree.xpath(grpemailPattern)
-	grpemail = get_text(grpemail)
+	if grpemailPattern != "":
+		grpemail = tree.xpath(grpemailPattern)
+		grpemail = get_text(grpemail)
+	else:
+		grpemail = ""
 
 	contactName = tree.xpath(contactNamePattern)
 	contactName = get_text(contactName)
@@ -348,6 +357,7 @@ def fetch_information(HTML, requrl):
 		picurl = tree.xpath(picurlPattern)
 		picurl = get_picurl(picurl)
 
+
 	if tagsPattern != "":
 		tags = tree.xpath(tagsPattern)
 		tags = get_text(tags)
@@ -357,7 +367,7 @@ def fetch_information(HTML, requrl):
 		grpurl = tree.xpath(grpurlPattern)
 		grpurl = get_text(grpurl)
 
-	if "www" not in picurl and "http" not in picurl:
+	if "www" not in picurl and "http" not in picurl and "https" not in picurl and picurl != "":
 		picurl = domain + "/" + picurl
 	#raw_input(picurl)
 
@@ -374,9 +384,17 @@ def fetch_information(HTML, requrl):
 def get_picurl(lxmlItems):
 	picurl = ""
 	for lxmlItem in lxmlItems:
-		picurl += lxmlItem.get("src")
-	picurl = re.sub(r"^\W*?(?=\w)", "", picurl)
-
+		picurlText = lxmlItem.get("style")
+		if picurlText != None:
+			picurl += picurlText
+	if "background-image" in picurl:
+		picurl = re.sub(r"^[\w\W]*background-image:\s*url\(\'", "", picurl)
+		picurl = re.sub(r"\'\)[\w\W]*$", "", picurl)
+	else:
+		picurl = ""
+		for lxmlItem in lxmlItems:
+			picurl += lxmlItem.get("src")
+			picurl = re.sub(r"^\W*?(?=\w)", "", picurl)
 	return picurl
 
 def get_text(lxmlItems):
@@ -559,7 +577,7 @@ def insert_item(item):
 	crawledItem += 1
 	print item["grpname"]
 	#print item
-	raw_input(item["weburl"][0])
+	# raw_input(item["weburl"][0])
 	
 	groups.insert(item)
 	feed_url(item["weburl"][0])
