@@ -26,6 +26,7 @@ sys.setdefaultencoding('utf-8')
 conn = connection.conn
 Agnes = conn.Agnes
 itemFilter = conn.itemFilter
+groupslowercase = Agnes.groupslowercase
 # groups = Agnes.groups_auto
 # urlFilter = itemFilter.urlFilter_group_auto
 groups = Agnes.groups
@@ -579,8 +580,27 @@ def insert_item(item):
 	#print item
 	# raw_input(item["weburl"][0])
 	
-	groups.insert(item)
+	inserted_id = groups.insert(item)
+	insertGroupForKazem(item, inserted_id)
 	feed_url(item["weburl"][0])
+
+def insertGroupForKazem(group, inserted_id):
+	try:
+		group["groups_id"] = inserted_id
+		group["grpname"] = group["grpname"].lower()
+		group["grpaddress"] = group["grpaddress"].lower()
+		group["grpdesc"] = group["grpdesc"].lower()
+		tagList = []
+		for tag in group["other"]["tags"]:
+			tagList.append(tag.lower())
+		group["other"]["tags"] = tagList
+		groupslowercase.insert(group)
+	except Exception as e:
+		print "#########################"
+		print "ERROR:"
+		print e
+		print "#########################"
+		groupslowercase.insert(group)
 
 if __name__ == '__main__':
 	main()
