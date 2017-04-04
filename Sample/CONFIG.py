@@ -10,7 +10,7 @@ grpurl = ''
 #all the picurl should be included in the src tag
 picurl = '//img[@class="img-circle img__orgavatar"]'
 #input the list of community
-community = ["cua", "agnes"]
+community = ["cua", "groupten"]
 
 #input url #format: "http(s)://xx.xxx.edu(com/net)/xxx/xxx/xxx" The domain name should be the same
 mainUrlList = [

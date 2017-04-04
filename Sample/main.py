@@ -10,20 +10,25 @@ from lxml import etree
 import lxml
 import dateutil.parser as dparser
 import datetime
-import connection
+
 import sys
 import time
 import HTMLParser
 import unidecode
-
+import linecache
 from bs4 import BeautifulSoup
+
+import os
+sys.path.append(os.path.abspath('../Scripts'))
+import dbConnection
+from feedData import insertGroupData, insertFilter
 
 reload(sys)
 sys.setdefaultencoding('utf-8') 
 
 #####################
 #database setting
-conn = connection.conn
+conn = dbConnection.conn
 Agnes = conn.Agnes
 itemFilter = conn.itemFilter
 groupslowercase = Agnes.groupslowercase
@@ -142,31 +147,31 @@ def visit_page():
 
 	while len(visitList) != 0:
 		requrl = visitList[0]
-		try:
-			#check custom header
-			if customHeaders == "":
-				req = urllib2.Request(requrl)
-			else:
-				req = urllib2.Request(requrl, headers = customHeaders)
+		# try:
+		#check custom header
+		if customHeaders == "":
+			req = urllib2.Request(requrl)
+		else:
+			req = urllib2.Request(requrl, headers = customHeaders)
 
-			res_data = urllib2.urlopen(req, timeout = 10)
-			encoding = res_data.info().get('Content-Encoding')
-			
-			if encoding in ('gzip','x-zip','deflate'):
-				res = decode(res_data, encoding)
-			else:
-				res = res_data.read()
+		res_data = urllib2.urlopen(req, timeout = 10)
+		encoding = res_data.info().get('Content-Encoding')
+		
+		if encoding in ('gzip','x-zip','deflate'):
+			res = decode(res_data, encoding)
+		else:
+			res = res_data.read()
 
-			analyze_page(res, requrl)
+		analyze_page(res, requrl)
 
-			print requrl
+		print requrl
 
-		except Exception as e:
-			print "#######################################"
-			print "Exception handling: " + str(e)
-			print requrl
-			printException()
-			print "#######################################"
+		# except Exception as e:
+		# 	print "#######################################"
+		# 	print "Exception handling: " + str(e)
+		# 	print requrl
+		# 	printException()
+		# 	print "#######################################"
 			
 		visitList.remove(requrl)
 		visitedList.append(requrl)
@@ -201,6 +206,8 @@ def analyze_page(HTML, requrl):
 	global stopSign
 	#remove script content
 	HTML = re.sub(r'<script[\w\W]*?</script>', '', HTML)
+	HTML = re.sub(r'<!--[\w\W]*?-->', '', HTML)
+	HTML = HTMLParser.HTMLParser().unescape(HTML)
 	soup = BeautifulSoup(HTML)
 	HTML = str(soup.body)
 	#print HTML
@@ -322,7 +329,8 @@ def fetch_information(HTML, requrl):
 	picurl = ""
 	tags = []
 	grpurl = ""
-
+	contactName = ""
+	
 	#raw_input(requrl)
 	#print HTML
 	#raw_input(123)
@@ -380,6 +388,20 @@ def fetch_information(HTML, requrl):
 
 	grpaddress = analyze_text(grpaddress)
 
+	if " " in grpemail:
+			grpemail = grpemail.split(" ")
+	elif "/" in grpemail:
+		grpemail = grpemail.split("/")
+	elif grpemail == "":
+		grpemail = []
+	else:
+		grpemail = [grpemail]
+
+	temp = []
+	for email in grpemail:
+		temp.append(email.strip())
+	grpemail = temp
+	
 	fetch_data(url, grpname, grpdesc, grpaddress, community, grpsource, formerDate, tags, additionalTags, picurl, contactName, grpemail, grptype, grpurl)
 
 def get_picurl(lxmlItems):
@@ -579,28 +601,17 @@ def insert_item(item):
 	print item["grpname"]
 	#print item
 	# raw_input(item["weburl"][0])
-	
-	inserted_id = groups.insert(item)
-	insertGroupForKazem(item, inserted_id)
-	feed_url(item["weburl"][0])
+	if insertGroupData(groups, item):
+		insertFilter(urlFilter, {"url":item["weburl"][0]})
 
-def insertGroupForKazem(group, inserted_id):
-	try:
-		group["groups_id"] = inserted_id
-		group["grpname"] = group["grpname"].lower()
-		group["grpaddress"] = group["grpaddress"].lower()
-		group["grpdesc"] = group["grpdesc"].lower()
-		tagList = []
-		for tag in group["other"]["tags"]:
-			tagList.append(tag.lower())
-		group["other"]["tags"] = tagList
-		groupslowercase.insert(group)
-	except Exception as e:
-		print "#########################"
-		print "ERROR:"
-		print e
-		print "#########################"
-		groupslowercase.insert(group)
+def printException():
+	exc_type, exc_obj, tb = sys.exc_info()
+	f = tb.tb_frame
+	lineno = tb.tb_lineno
+	filename = f.f_code.co_filename
+	linecache.checkcache(filename)
+	line = linecache.getline(filename, lineno, f.f_globals)
+	print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
 
 if __name__ == '__main__':
 	main()
